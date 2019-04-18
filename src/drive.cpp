@@ -2,13 +2,13 @@
 
 
 
-void display_init() {
+void drive_init() {
 
 }
 
-void display_update() {
+void drive_update() {
 
-
+/*
 	driveData.driveSerialDataBuffer [0] = 65; // header
 
 	// B1: battery level
@@ -49,5 +49,5 @@ void display_update() {
 	for (ui8_j = 1; ui8_j <= 11; ui8_j++) {
 		ui8_crc ^= displayData.displaySerialBuffer[ui8_j];
 	}
-	displayData.displaySerialBuffer [6] = ui8_crc;
+	displayData.displaySerialBuffer [6] = ui8_crc;*/
 }

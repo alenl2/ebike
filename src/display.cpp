@@ -1,6 +1,7 @@
 #include "display.h"
 
 DisplayData displayData;
+DisplayVariables displayVariables;
 
 uint8_t ui8_j; //conter for for loop
 uint8_t ui8_crc; //crc calculation
@@ -8,21 +9,14 @@ uint8_t ui8_moving_indication; //brake throttle and pas indicators
 uint16_t ui16_wheel_period_ms;
 uint8_t ui8_battery_soc;
 
+HardwareSerial Display(USART1); // uart 1
+
 void display_init() {
-    displayData.batteryBarCount = 4; //4 full 0 empty
-    displayData.batteryVoltage = 24; // voltage
-    displayData.speed = 10; //time for one wheel rotation
-    displayData.wattage = 255;
-    displayData.temperature = 20;
-    displayData.brake = false;
-    displayData.throttle = false;
-    displayData.pas = false;
+	Display.begin(9600, SERIAL_8N1);
 }
-
+//displayData.speed
 void display_update() {
-
-	ui16_wheel_period_ms = displayData.speed * 150;
-
+	ui16_wheel_period_ms = displayData.speed;
 
 	if (displayData.batteryBarCount == 4) {
 		ui8_battery_soc = 16; // 4 bars | full
@@ -45,9 +39,9 @@ void display_update() {
 	if (displayData.brake) {
 		ui8_moving_indication |= (1 << 5);
 	}
-	//if (ebike_app_cruise_control_is_set ()) { ui8_moving_indication |= (1 << 3); }
-	//if (throttle_is_set ()) { ui8_moving_indication |= (1 << 1); }
-	//if (pas_is_set ()) { ui8_moving_indication |= (1 << 4); }
+	if (displayData.cruise) { ui8_moving_indication |= (1 << 3); }
+	if (displayData.throttle) { ui8_moving_indication |= (1 << 1); }
+	if (displayData.brake) { ui8_moving_indication |= (1 << 4); }
 
 	displayData.displaySerialBuffer [0] = 65; // header
 
@@ -90,4 +84,84 @@ void display_update() {
 		ui8_crc ^= displayData.displaySerialBuffer[ui8_j];
 	}
 	displayData.displaySerialBuffer [6] = ui8_crc;
+	for(int i=0;i<13;i++){
+		Display.write(displayData.displaySerialBuffer[i]);
+	}
 }
+
+void display_parse(){
+
+  
+  static boolean recvInProgress = false;
+  static byte ndx = 0;         //
+  uint8_t  startInt = 14;          // 128 is integer equivalent of 1000 0000 <- start bit
+  uint8_t  endInt = 14;             // 64 is integer equivalent of 0100 0000 <- stop bit
+  uint8_t ri;                      //
+  
+  while (Display.available() > 0) {
+   ri = Display.read();
+
+   if (recvInProgress == true) {
+     if (ri != endInt) {
+       displayVariables.displaySerialBuffer[ndx] = ri;
+       ndx++;
+       if (ndx >= 13) {
+         ndx = 13 - 1;
+       }
+     } else {
+       displayVariables.displaySerialBuffer[ndx] = '\0'; // terminate the string
+       recvInProgress = false;
+       ndx = 0;
+       
+
+
+
+		ui8_crc = 0;
+		for (ui8_j = 0; ui8_j <= 12; ui8_j++) {
+			
+			if (ui8_j == 5) continue; // don't xor B5 
+			ui8_crc ^= displayVariables.displaySerialBuffer[ui8_j];
+		}
+
+		// see if CRC is ok
+		if (((ui8_crc ^ 10) == displayVariables.displaySerialBuffer [5]) || // some versions of CRC LCD5 (??)
+				((ui8_crc ^ 1) == displayVariables.displaySerialBuffer [5]) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
+				((ui8_crc ^ 2) == displayVariables.displaySerialBuffer [5]) || // CRC LCD5
+				((ui8_crc ^ 3) == displayVariables.displaySerialBuffer [5]) || // CRC LCD5 Added display 5 Romanta
+				((ui8_crc ^ 4) == displayVariables.displaySerialBuffer [5]) ||
+				((ui8_crc ^ 5) == displayVariables.displaySerialBuffer [5]) ||
+				((ui8_crc ^ 6) == displayVariables.displaySerialBuffer [5]) ||
+				((ui8_crc ^ 7) == displayVariables.displaySerialBuffer [5]) ||
+				((ui8_crc ^ 8) == displayVariables.displaySerialBuffer [5]) ||
+				((ui8_crc ^ 9) == displayVariables.displaySerialBuffer [5])) // CRC LCD3
+		{
+			displayVariables.ui8_assist_level = displayVariables.displaySerialBuffer [1] & 7;
+			displayVariables.ui8_max_speed = 10 + ((displayVariables.displaySerialBuffer [2] & 248) >> 3) | (displayVariables.displaySerialBuffer [4] & 32);
+			displayVariables.ui8_wheel_size = ((displayVariables.displaySerialBuffer [4] & 192) >> 6) | ((displayVariables.displaySerialBuffer [2] & 7) << 2);
+
+			displayVariables.ui8_p1 = displayVariables.displaySerialBuffer[3];
+			displayVariables.ui8_p2 = displayVariables.displaySerialBuffer[4] & 0x07;
+			displayVariables.ui8_p3 = displayVariables.displaySerialBuffer[4] & 0x08;
+			displayVariables.ui8_p4 = displayVariables.displaySerialBuffer[4] & 0x10;
+			displayVariables.ui8_p5 = displayVariables.displaySerialBuffer[0];
+
+			displayVariables.ui8_c1 = (displayVariables.displaySerialBuffer[6] & 0x38) >> 3;
+			displayVariables.ui8_c2 = (displayVariables.displaySerialBuffer[6] & 0x37);
+			displayVariables.ui8_c4 = (displayVariables.displaySerialBuffer[8] & 0xE0) >> 5;
+			displayVariables.ui8_c5 = (displayVariables.displaySerialBuffer[7] & 0x0F);
+			displayVariables.ui8_c12 = (displayVariables.displaySerialBuffer[9] & 0x0F);
+			displayVariables.ui8_c13 = (displayVariables.displaySerialBuffer[10] & 0x1C) >> 2;
+			displayVariables.ui8_c14 = (displayVariables.displaySerialBuffer[7] & 0x60) >> 5;
+		}
+
+
+
+
+     }
+    } else if (ri == startInt) {
+      recvInProgress = true;
+    }
+  }
+
+}
+
