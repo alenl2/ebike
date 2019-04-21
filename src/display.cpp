@@ -3,16 +3,29 @@
 DisplayData displayData;
 DisplayVariables displayVariables;
 
+HardwareSerial Display(USART1); // uart 1
+
 uint8_t ui8_j; //conter for for loop
 uint8_t ui8_crc; //crc calculation
 uint8_t ui8_moving_indication; //brake throttle and pas indicators
 uint16_t ui16_wheel_period_ms;
 uint8_t ui8_battery_soc;
 
-HardwareSerial Display(USART1); // uart 1
-
 void display_init() {
 	Display.begin(9600, SERIAL_8N1);
+
+	displayData.speed = 0; //time for one wheel rotation  //10=4.3 //20=2.2
+    displayData.watts = 0;
+
+    displayData.batteryBarCount = 0; //4 full 0 empty
+    displayData.batteryVoltage = 12 * 3.45; // voltage
+    displayData.temperature = 0;
+    displayData.brake = false;
+    displayData.throttle = false;
+    displayData.pas = false;
+    displayData.error = Info1;
+    displayData.cruise = false;
+	displayVariables.didInit = false;
 }
 //displayData.speed
 void display_update() {
@@ -54,7 +67,7 @@ void display_update() {
 	displayData.displaySerialBuffer [4] = ui16_wheel_period_ms & 0xff;
 
 	// B5: error info display
-	displayData.displaySerialBuffer [5] = 0;
+	displayData.displaySerialBuffer [5] = displayData.error;
 
   // B6: CRC: xor B1,B2,B3,B4,B5,B7,B8,B9,B10,B11
 	displayData.displaySerialBuffer [6] = 0; 
@@ -69,7 +82,7 @@ void display_update() {
 	// - B8 = 250, LCD shows 1875 watts
 	// - B8 = 100, LCD shows 750 watts
 	// each unit of B8 = 0.25A
-	displayData.displaySerialBuffer [8] = displayData.wattage;
+	displayData.displaySerialBuffer [8] = displayData.watts / displayData.batteryVoltage * 4;
 
 	// B9: motor temperature
 	displayData.displaySerialBuffer [9] = displayData.temperature - 15; //according to documentation at endless sphere
@@ -84,6 +97,10 @@ void display_update() {
 		ui8_crc ^= displayData.displaySerialBuffer[ui8_j];
 	}
 	displayData.displaySerialBuffer [6] = ui8_crc;
+
+	if(displayVariables.didInit == false){
+		//return;
+	}
 	for(int i=0;i<13;i++){
 		Display.write(displayData.displaySerialBuffer[i]);
 	}
@@ -109,7 +126,7 @@ void display_parse(){
          ndx = 13 - 1;
        }
      } else {
-       displayVariables.displaySerialBuffer[ndx] = '\0'; // terminate the string
+       //displayVariables.displaySerialBuffer[ndx] = '\0'; // terminate the string
        recvInProgress = false;
        ndx = 0;
        
@@ -117,12 +134,17 @@ void display_parse(){
 
 
 		ui8_crc = 0;
-		for (ui8_j = 0; ui8_j <= 12; ui8_j++) {
+		for (ui8_j = 0; ui8_j < 13; ui8_j++) {
 			
 			if (ui8_j == 5) continue; // don't xor B5 
 			ui8_crc ^= displayVariables.displaySerialBuffer[ui8_j];
 		}
+		ui8_crc-=12;
 
+		displayVariables.calcCrc = ui8_crc;
+		displayVariables.reportedCrc = displayVariables.displaySerialBuffer [5];
+
+		/*
 		// see if CRC is ok
 		if (((ui8_crc ^ 10) == displayVariables.displaySerialBuffer [5]) || // some versions of CRC LCD5 (??)
 				((ui8_crc ^ 1) == displayVariables.displaySerialBuffer [5]) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
@@ -135,7 +157,30 @@ void display_parse(){
 				((ui8_crc ^ 8) == displayVariables.displaySerialBuffer [5]) ||
 				((ui8_crc ^ 9) == displayVariables.displaySerialBuffer [5])) // CRC LCD3
 		{
-			displayVariables.ui8_assist_level = displayVariables.displaySerialBuffer [1] & 7;
+			*/
+			
+
+			if(displayVariables.displaySerialBuffer [1] & 7 == 6){
+				displayVariables.walkAssistOn = true;
+			}else{
+				displayVariables.walkAssistOn = false;
+				displayVariables.ui8_assist_level = displayVariables.displaySerialBuffer [1] & 7;
+			}
+			if (  displayVariables.displaySerialBuffer [1] & (1 << 7) )
+			{
+				displayVariables.lightOn = true;
+			}else{
+				displayVariables.lightOn = false;
+			}
+
+			if (  displayVariables.displaySerialBuffer [8] & (1 << 4) )
+			{
+				displayVariables.enterCruise = true;
+			}else{
+				displayVariables.enterCruise = false;
+			}
+
+
 			displayVariables.ui8_max_speed = 10 + ((displayVariables.displaySerialBuffer [2] & 248) >> 3) | (displayVariables.displaySerialBuffer [4] & 32);
 			displayVariables.ui8_wheel_size = ((displayVariables.displaySerialBuffer [4] & 192) >> 6) | ((displayVariables.displaySerialBuffer [2] & 7) << 2);
 
@@ -152,7 +197,9 @@ void display_parse(){
 			displayVariables.ui8_c12 = (displayVariables.displaySerialBuffer[9] & 0x0F);
 			displayVariables.ui8_c13 = (displayVariables.displaySerialBuffer[10] & 0x1C) >> 2;
 			displayVariables.ui8_c14 = (displayVariables.displaySerialBuffer[7] & 0x60) >> 5;
-		}
+			displayVariables.newData = true;
+			displayVariables.didInit = true;
+		//}
 
 
 

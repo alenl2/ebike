@@ -1,76 +1,124 @@
 #include "display.h"
+#include "brake.h"
+#include "key.h"
+#include "throttle.h"
+#include "pas.h"
 
+HardwareSerial Pc(USART6); // uart 1
 
-
-
-void debugSerial(){
-  Serial.print("P1:");
-  Serial.print(displayVariables.ui8_p1);
-  Serial.print(" ");
-
-  Serial.print("P2:");
-  Serial.print(displayVariables.ui8_p2);
-  Serial.print(" ");
-
-  Serial.print("P3:");
-  Serial.print(displayVariables.ui8_p3);
-  Serial.print(" ");
-  
-  Serial.print("P4:");
-  Serial.print(displayVariables.ui8_p4);
-  Serial.print(" ");
-
-  Serial.print("P5:");
-  Serial.print(displayVariables.ui8_p5);
-  Serial.print(" ");
-
-  Serial.print("C1:");
-  Serial.print(displayVariables.ui8_c1);
-  Serial.print(" ");
-
-  Serial.print("C2:");
-  Serial.print(displayVariables.ui8_c2);
-  Serial.print(" ");
-
-  Serial.print("C4:");
-  Serial.print(displayVariables.ui8_c4);
-  Serial.print(" ");
-
-  Serial.print("C5:");
-  Serial.print(displayVariables.ui8_c5);
-  Serial.print(" ");
-
-  Serial.print("C12:");
-  Serial.print(displayVariables.ui8_c12);
-  Serial.print(" ");
-
-  Serial.print("C13:");
-  Serial.print(displayVariables.ui8_c13);
-  Serial.print(" ");
-
-  Serial.print("C14:");
-  Serial.print(displayVariables.ui8_c14);
-  Serial.print(" ");
-
-  Serial.print("Max spd:");
-  Serial.print(displayVariables.ui8_max_speed);
-  Serial.print(" ");
-
-  Serial.print("Whell size:");
-  Serial.print(displayVariables.ui8_wheel_size);
-  Serial.print(" ");
-
-  Serial.print("Assist:");
-  Serial.print(displayVariables.ui8_assist_level);
-  Serial.print(" ");
-
-  Serial.print("RAW:");
-  for(int i=0;i<13;i++){
-    Serial.print(displayVariables.displaySerialBuffer[i], HEX);
-    Serial.print(" ");
+void debugLcd(){
+  if(displayVariables.newData == false){
+    return;
   }
-  Serial.println();
-  Serial.flush();
+  displayVariables.newData=false;
+  Pc.print("P1:");
+  Pc.print(displayVariables.ui8_p1);
+  Pc.print(" ");
+
+  Pc.print("P2:");
+  Pc.print(displayVariables.ui8_p2);
+  Pc.print(" ");
+
+  Pc.print("P3:");
+  Pc.print(displayVariables.ui8_p3);
+  Pc.print(" ");
+  
+  Pc.print("P4:");
+  Pc.print(displayVariables.ui8_p4);
+  Pc.print(" ");
+
+  Pc.print("P5:");
+  Pc.print(displayVariables.ui8_p5);
+  Pc.print(" ");
+
+  Pc.print("C1:");
+  Pc.print(displayVariables.ui8_c1);
+  Pc.print(" ");
+
+  Pc.print("C2:");
+  Pc.print(displayVariables.ui8_c2);
+  Pc.print(" ");
+
+  Pc.print("C4:");
+  Pc.print(displayVariables.ui8_c4);
+  Pc.print(" ");
+
+  Pc.print("C5:");
+  Pc.print(displayVariables.ui8_c5);
+  Pc.print(" ");
+
+  Pc.print("C12:");
+  Pc.print(displayVariables.ui8_c12);
+  Pc.print(" ");
+
+  Pc.print("C13:");
+  Pc.print(displayVariables.ui8_c13);
+  Pc.print(" ");
+
+  Pc.print("C14:");
+  Pc.print(displayVariables.ui8_c14);
+  Pc.print(" ");
+
+  Pc.print("Max spd:");
+  Pc.print(displayVariables.ui8_max_speed);
+  Pc.print(" ");
+
+  Pc.print("Whell size:");
+  Pc.print(displayVariables.ui8_wheel_size);
+  Pc.print(" ");
+
+  Pc.print("Assist:");
+  Pc.print(displayVariables.ui8_assist_level);
+  Pc.print(" ");
+
+  Pc.print("Light:");
+  Pc.print(displayVariables.lightOn);
+  Pc.print(" ");
+
+  Pc.print("Push assist:");
+  Pc.print(displayVariables.walkAssistOn);
+  Pc.print(" ");
+
+  Pc.print("Cruise:");
+  Pc.print(displayVariables.enterCruise);
+  Pc.print(" ");
+
+  Pc.print("RAW:");
+  for(int i=0;i<13;i++){
+    Pc.print(displayVariables.displaySerialBuffer[i], BIN);
+    Pc.print(" ");
+  }
+  Pc.print("Calc crc:");
+  Pc.print(displayVariables.calcCrc);
+  Pc.print(" ");
+
+  Pc.print("Report crc: ");
+  Pc.print(displayVariables.reportedCrc);
+  Pc.print(" ");
+
+  Pc.println();
+  Pc.flush();
+}
+
+void debugThrottle(){
+  Pc.print(throttleData.throttleOn);
+  Pc.print(" ");
+  Pc.print(throttleData.procentual);
+  Pc.print(" ");
+  Pc.println(throttleData.throttleValue);
+}
+
+void debugBrake(){
+  Pc.print("Main brake:");
+  Pc.print(brakeData.brakeOn);
+  Pc.print(" ");
+  Pc.print("Aux brake:");
+  Pc.println(brakeData.auxBrakeOn);
+}
+
+void debugKey(){
+  Pc.print("Key:");
+  Pc.println(keyData.keyOn);
 }
 
 /*
@@ -83,22 +131,41 @@ write
 
 */
 void setup() {
-    Serial.begin(115200);
+    Pc.begin(115200);
     display_init();
+    brake_init();
+    key_init();
+    throttle_init();
+    pas_init();
 
-    displayData.batteryBarCount = 4; //4 full 0 empty
-    displayData.batteryVoltage = 40; // voltage
-    displayData.speed = 8500; //time for one wheel rotation  //10=4.3 //20=2.2
-    displayData.wattage = 255;
-    displayData.temperature = 20;
-    displayData.brake = true;
-    displayData.throttle = true;
-    displayData.pas = true;
-    displayData.cruise = true;
+    displayData.error = None;
+    displayData.batteryVoltage = 49;
+    displayData.speed = 1000;
 }
-
+int count =0;
 void loop() {
+  count++;
   display_parse();
-
   display_update();
+
+  brake_update();
+  key_update();
+  throttle_update();
+  pas_update();
+
+  debugLcd();
+
 }
+
+
+/*
+TODO:
+  LCD:
+    READ:
+        Test P and C values
+    
+    Write:
+        Calibrate speedo
+        Test cadence
+
+*/

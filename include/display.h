@@ -6,17 +6,26 @@ void display_init();
 void display_update();
 void display_parse();
 
+enum ErrorEnum: uint8_t {
+    None=0,
+    Info1=34,
+    Info2=36,
+    Info3=37,
+    Info4=39,
+    Info5=40
+};
 struct DisplayData {
-    uint8_t displaySerialBuffer[12]; //display uart tx buffer
+    uint8_t displaySerialBuffer[13]; //display uart tx buffer
     uint8_t batteryBarCount; //4 full 0 empty
     uint8_t batteryVoltage; // voltage
-    uint8_t speed; //time for one wheel rotation
-    uint8_t  wattage;
+    uint16_t speed; //time for one wheel rotation
+    uint16_t watts;
     uint8_t  temperature;
+    ErrorEnum error;
     bool brake;
     bool throttle;
     bool pas;
-    bool cruise;
+    bool enterCruise;
 };
 
 struct DisplayVariables
@@ -37,6 +46,12 @@ struct DisplayVariables
     uint8_t ui8_c12;
     uint8_t ui8_c13;
     uint8_t ui8_c14;
+    int reportedCrc;
+    int calcCrc;
+    bool didInit;
+    bool newData;
+    bool lightOn;
+    bool walkAssistOn;
 };
 
 extern DisplayData displayData;
