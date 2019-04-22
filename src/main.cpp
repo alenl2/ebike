@@ -145,7 +145,7 @@ void setup() {
 
     displayData.error = None;
     displayData.batteryVoltage = 49;
-    displayData.speed = 10;
+    displayData.speed = 2000;
     displayData.pas = true;
 }
 
@@ -154,16 +154,17 @@ float throttleValue = 0;
 
 void loop() {
   key_update();
-
-  if(keyData.keyOn == false){
-    //return;
-  }
   display_parse();
   display_update();
   drive_update();
   throttle_update();
   pas_update();
   brake_update();
+
+  if(keyData.keyOn == false || displayVariables.didInit == false){
+    return;
+    driveData.throttleProcentual = 0;
+  }
 
   if(displayVariables.enterCruise){
     runInCruise = true;
@@ -213,5 +214,7 @@ TODO:
     
     Write:
         Calibrate speedo
+
+RESET DISPLAY DID INIT AFTER 1sec of no data
 
 */
