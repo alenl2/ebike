@@ -1,13 +1,14 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef DRIVE_H
+#define DRIVE_H
 #include <Arduino.h>
 
 void drive_init();
 void drive_update();
 
 struct DriveData {
+    float throttleProcentual;
 };
 
 extern DriveData driveData;
 
-#endif // DISPLAY_H
+#endif // DRIVE_H

@@ -3,8 +3,9 @@
 #include "key.h"
 #include "throttle.h"
 #include "pas.h"
+#include "drive.h"
 
-HardwareSerial Pc(USART6); // uart 1
+HardwareSerial  Pc(USART2); // uart 1
 
 void debugLcd(){
   if(displayVariables.newData == false){
@@ -121,15 +122,18 @@ void debugKey(){
   Pc.println(keyData.keyOn);
 }
 
-/*
-TODO 
-read
-  display light
+void debugPas(){
+  Pc.print("PasSpeed:");
+  Pc.print(pasData.pasSpeed);
+  Pc.print(" ");
+  Pc.print("PasOn:");
+  Pc.println(pasData.pasOn);
+}
 
-write
-  cadence number
+void deubgDrive(){
 
-*/
+}
+
 void setup() {
     Pc.begin(115200);
     display_init();
@@ -137,24 +141,67 @@ void setup() {
     key_init();
     throttle_init();
     pas_init();
+    drive_init();
 
     displayData.error = None;
     displayData.batteryVoltage = 49;
-    displayData.speed = 1000;
+    displayData.speed = 10;
+    displayData.pas = true;
 }
-int count =0;
+
+bool runInCruise = false;
+float throttleValue = 0;
+
 void loop() {
-  count++;
+  key_update();
+
+  if(keyData.keyOn == false){
+    //return;
+  }
   display_parse();
   display_update();
-
-  brake_update();
-  key_update();
+  drive_update();
   throttle_update();
   pas_update();
+  brake_update();
 
-  debugLcd();
+  if(displayVariables.enterCruise){
+    runInCruise = true;
+  }
 
+  if(pasData.pasOn){
+    displayData.pas = true;
+  }else{
+    displayData.pas = false;
+  }
+
+  if(brakeData.brakeOn){
+    displayData.brake = true;
+    throttleValue = -100;
+  }else{
+    displayData.brake = false;
+    throttleValue = 0;
+    if(runInCruise){
+      displayData.cruise = true;
+      throttleValue = throttleValue;
+    }else{
+      displayData.cruise = false;
+      if(throttleData.throttleOn){
+        displayData.throttle = true;
+        throttleValue = throttleData.procentual;
+      }else{
+        displayData.throttle = false;
+        if(pasData.pasOn){
+          displayData.pas = true;
+          throttleValue = displayVariables.ui8_assist_level/5.0f*100;
+        }else{
+          displayData.pas = false;
+          throttleValue = 0;
+        }
+      }
+    }
+  }
+  driveData.throttleProcentual = throttleValue;
 }
 
 
@@ -162,10 +209,9 @@ void loop() {
 TODO:
   LCD:
     READ:
-        Test P and C values
+        Fix P and C values
     
     Write:
         Calibrate speedo
-        Test cadence
 
 */

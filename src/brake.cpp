@@ -9,6 +9,12 @@ void brake_init() {
     brakeData.auxBrakeOn = false;
     pinMode(brakePin, INPUT_PULLUP);
     pinMode(auxBrake, INPUT_PULLUP);
+
+    if(digitalRead(auxBrake)){
+         brakeData.offroad = false;
+    }else{
+       brakeData.offroad = true;
+    }
 }
 
 

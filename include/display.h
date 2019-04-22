@@ -25,7 +25,7 @@ struct DisplayData {
     bool brake;
     bool throttle;
     bool pas;
-    bool enterCruise;
+    bool cruise;
 };
 
 struct DisplayVariables
@@ -52,6 +52,7 @@ struct DisplayVariables
     bool newData;
     bool lightOn;
     bool walkAssistOn;
+    bool enterCruise;
 };
 
 extern DisplayData displayData;

@@ -11,9 +11,12 @@ uint8_t ui8_moving_indication; //brake throttle and pas indicators
 uint16_t ui16_wheel_period_ms;
 uint8_t ui8_battery_soc;
 
+bool rdyToTransmit;
+
 void display_init() {
 	Display.begin(9600, SERIAL_8N1);
 
+	rdyToTransmit = false;
 	displayData.speed = 0; //time for one wheel rotation  //10=4.3 //20=2.2
     displayData.watts = 0;
 
@@ -26,10 +29,21 @@ void display_init() {
     displayData.error = Info1;
     displayData.cruise = false;
 	displayVariables.didInit = false;
+
+	
 }
 //displayData.speed
 void display_update() {
-	ui16_wheel_period_ms = displayData.speed;
+	if(rdyToTransmit == false){
+		return;
+	}
+
+	if(displayVariables.didInit == false){
+		return;
+	}
+	rdyToTransmit = false;
+	float wheelRadius = 2074;//mm
+	ui16_wheel_period_ms = displayData.speed*0.277778f / wheelRadius;
 
 	if (displayData.batteryBarCount == 4) {
 		ui8_battery_soc = 16; // 4 bars | full
@@ -48,13 +62,14 @@ void display_update() {
 	}
 
 
+
     ui8_moving_indication = 0;
 	if (displayData.brake) {
 		ui8_moving_indication |= (1 << 5);
 	}
 	if (displayData.cruise) { ui8_moving_indication |= (1 << 3); }
 	if (displayData.throttle) { ui8_moving_indication |= (1 << 1); }
-	if (displayData.brake) { ui8_moving_indication |= (1 << 4); }
+	if (displayData.pas) { ui8_moving_indication |= (1 << 4); }
 
 	displayData.displaySerialBuffer [0] = 65; // header
 
@@ -98,9 +113,6 @@ void display_update() {
 	}
 	displayData.displaySerialBuffer [6] = ui8_crc;
 
-	if(displayVariables.didInit == false){
-		//return;
-	}
 	for(int i=0;i<13;i++){
 		Display.write(displayData.displaySerialBuffer[i]);
 	}
@@ -129,9 +141,6 @@ void display_parse(){
        //displayVariables.displaySerialBuffer[ndx] = '\0'; // terminate the string
        recvInProgress = false;
        ndx = 0;
-       
-
-
 
 		ui8_crc = 0;
 		for (ui8_j = 0; ui8_j < 13; ui8_j++) {
@@ -199,6 +208,8 @@ void display_parse(){
 			displayVariables.ui8_c14 = (displayVariables.displaySerialBuffer[7] & 0x60) >> 5;
 			displayVariables.newData = true;
 			displayVariables.didInit = true;
+
+			rdyToTransmit = true;
 		//}
 
 
