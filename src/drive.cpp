@@ -67,10 +67,6 @@ static void MX_TIM2_Init(void)
 
 
 void drive_init() {
-  SystemClock_Config();
-
-  HAL_Init();
-
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
