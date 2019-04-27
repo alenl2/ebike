@@ -132,7 +132,7 @@ void debugPas(){
 
 void debugDrive(){
   Pc.print("PWM:");
- // Pc.print(driveData.pwmValue);
+  Pc.print(driveData.pwmValue);
 }
 
 void setup() {
@@ -203,7 +203,7 @@ void loop() {
       }
     }
   }
-  //driveData.throttleProcentual = throttleValue;
+  driveData.throttleProcentual = throttleValue;
 
 }
 

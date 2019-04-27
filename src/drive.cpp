@@ -30,9 +30,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 19;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1000;
+  htim2.Init.Period = 10000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV2;
 
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -55,33 +55,19 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
-    
-
-  /* USER CODE BEGIN TIM2_MspPostInit 0 */
-
-  /* USER CODE END TIM2_MspPostInit 0 */
-  
-
-
-  /* USER CODE BEGIN TIM2_MspPostInit 1 */
-
-  /* USER CODE END TIM2_MspPostInit 1 */
   }
 
 
 
 void drive_init() {
-
+  SystemClock_Config();
 
   HAL_Init();
 
@@ -165,16 +151,16 @@ void drive_init() {
 }
 
 void drive_update() {
-  /*
+
     if(driveData.throttleProcentual > 0){
-        driveData.pwmValue = (driveData.throttleProcentual);
+        driveData.pwmValue = map(driveData.throttleProcentual,0,101,2100,10000);
     }else{
-        driveData.pwmValue = 0;
-    }*/
+        driveData.pwmValue = 2050;
+    }
 
 
     
-    //__HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_2, driveData.pwmValue);
+    __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_2, driveData.pwmValue);
     //analogWrite(pwmPin, driveData.pwmValue);    
    // Drive.println(driveData.throttleProcentual+100.0f);
 }
