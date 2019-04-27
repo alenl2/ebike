@@ -30,7 +30,7 @@ struct DisplayData {
 
 struct DisplayVariables
 {
-    uint8_t displaySerialBuffer[13]; //display uart rx buffer
+    uint8_t displaySerialBuffer[14]; //display uart rx buffer
     uint8_t ui8_assist_level;
     uint8_t ui8_max_speed;
     uint8_t ui8_wheel_size;

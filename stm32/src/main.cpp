@@ -4,6 +4,8 @@
 #include "throttle.h"
 #include "pas.h"
 #include "drive.h"
+#include "drive.h"
+
 
 HardwareSerial  Pc(USART2); // uart 1
 
@@ -96,8 +98,6 @@ void debugLcd(){
   Pc.print("Report crc: ");
   Pc.print(displayVariables.reportedCrc);
   Pc.print(" ");
-
-  Pc.println();
   Pc.flush();
 }
 
@@ -106,7 +106,7 @@ void debugThrottle(){
   Pc.print(" ");
   Pc.print(throttleData.procentual);
   Pc.print(" ");
-  Pc.println(throttleData.throttleValue);
+  Pc.print(throttleData.throttleValue);
 }
 
 void debugBrake(){
@@ -114,12 +114,12 @@ void debugBrake(){
   Pc.print(brakeData.brakeOn);
   Pc.print(" ");
   Pc.print("Aux brake:");
-  Pc.println(brakeData.auxBrakeOn);
+  Pc.print(brakeData.auxBrakeOn);
 }
 
 void debugKey(){
   Pc.print("Key:");
-  Pc.println(keyData.keyOn);
+  Pc.print(keyData.keyOn);
 }
 
 void debugPas(){
@@ -127,11 +127,12 @@ void debugPas(){
   Pc.print(pasData.pasSpeed);
   Pc.print(" ");
   Pc.print("PasOn:");
-  Pc.println(pasData.pasOn);
+  Pc.print(pasData.pasOn);
 }
 
-void deubgDrive(){
-
+void debugDrive(){
+  Pc.print("PWM:");
+  Pc.print(driveData.pwmValue);
 }
 
 void setup() {
@@ -146,7 +147,6 @@ void setup() {
     displayData.error = None;
     displayData.batteryVoltage = 49;
     displayData.speed = 2000;
-    displayData.pas = true;
 }
 
 bool runInCruise = false;
@@ -161,24 +161,25 @@ void loop() {
   pas_update();
   brake_update();
 
-  if(keyData.keyOn == false || displayVariables.didInit == false){
+  debugKey();
+  debugThrottle();
+  debugBrake() ;
+  debugDrive();
+  Pc.println();
+
+  if(keyData.keyOn == false /*|| displayVariables.didInit == false*/){
+    //driveData.throttleProcentual = 0;
+    displayData.error = Info5;
     return;
-    driveData.throttleProcentual = 0;
   }
 
   if(displayVariables.enterCruise){
     runInCruise = true;
   }
 
-  if(pasData.pasOn){
-    displayData.pas = true;
-  }else{
-    displayData.pas = false;
-  }
-
   if(brakeData.brakeOn){
     displayData.brake = true;
-    throttleValue = -100;
+    throttleValue = 0;
   }else{
     displayData.brake = false;
     throttleValue = 0;
@@ -188,8 +189,8 @@ void loop() {
     }else{
       displayData.cruise = false;
       if(throttleData.throttleOn){
-        displayData.throttle = true;
-        throttleValue = throttleData.procentual;
+        displayData.throttle = true; 
+        throttleValue = throttleData.procentual+1;
       }else{
         displayData.throttle = false;
         if(pasData.pasOn){
@@ -197,12 +198,13 @@ void loop() {
           throttleValue = displayVariables.ui8_assist_level/5.0f*100;
         }else{
           displayData.pas = false;
-          throttleValue = 0;
+          throttleValue = 1;
         }
       }
     }
   }
   driveData.throttleProcentual = throttleValue;
+
 }
 
 
