@@ -10,6 +10,7 @@ uint8_t ui8_crc; //crc calculation
 uint8_t ui8_moving_indication; //brake throttle and pas indicators
 uint16_t ui16_wheel_period_ms;
 uint8_t ui8_battery_soc;
+uint32_t lastOkRx;
 
 bool rdyToTransmit;
 
@@ -19,6 +20,7 @@ void display_init() {
 	rdyToTransmit = false;
 	displayData.speed = 0; //time for one wheel rotation  //10=4.3 //20=2.2
     displayData.watts = 0;
+	lastOkRx = 0;
 
     displayData.batteryBarCount = 0; //4 full 0 empty
     displayData.batteryVoltage = 12 * 3.45; // voltage
@@ -120,6 +122,10 @@ void display_update() {
 
 void display_parse(){
 
+	if(lastOkRx+5000 > millis()){
+		// after 5sec of no data deinit display
+		displayVariables.didInit = false;
+	}
   
   static boolean recvInProgress = false;
   static byte ndx = 0;         //
@@ -153,7 +159,7 @@ void display_parse(){
 		displayVariables.calcCrc = ui8_crc;
 		displayVariables.reportedCrc = displayVariables.displaySerialBuffer [5];
 
-		/*
+		
 		// see if CRC is ok
 		if (((ui8_crc ^ 10) == displayVariables.displaySerialBuffer [5]) || // some versions of CRC LCD5 (??)
 				((ui8_crc ^ 1) == displayVariables.displaySerialBuffer [5]) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
@@ -166,7 +172,7 @@ void display_parse(){
 				((ui8_crc ^ 8) == displayVariables.displaySerialBuffer [5]) ||
 				((ui8_crc ^ 9) == displayVariables.displaySerialBuffer [5])) // CRC LCD3
 		{
-			*/
+			
 			
 
 			if(displayVariables.displaySerialBuffer [1] & 7 == 6){
@@ -210,7 +216,8 @@ void display_parse(){
 			displayVariables.didInit = true;
 
 			rdyToTransmit = true;
-		//}
+			lastOkRx = millis();
+		}
 
 
 
