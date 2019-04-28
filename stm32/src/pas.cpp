@@ -6,7 +6,7 @@ PasData pasData;
 
 int pasPin = PA4;
 
-int pasThreashold = 5;
+int pasThreashold = 4;
 int timerSec = 2.1;
 
 uint32_t lastUpdate;
@@ -33,7 +33,7 @@ void pas_init() {
   TimHandle.timer = TIMER_BLINK;
 
   float timerSec = 1.5;
-  TimerHandleInit(&TimHandle, timerSec*5000 - 1, ((uint32_t)(getTimerClkFreq(TIMER_BLINK) / (1000)) - 1));
+  TimerHandleInit(&TimHandle, timerSec*340 - 1, ((uint32_t)(getTimerClkFreq(TIMER_BLINK) / (1000)) - 1));
   attachIntHandle(&TimHandle, timer);
 
 }

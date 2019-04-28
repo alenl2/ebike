@@ -8,7 +8,6 @@ void brake_update();
 struct BrakeData {
     bool brakeOn; //display uart tx buffer
     bool auxBrakeOn;
-    bool offroad;
 };
 
 extern BrakeData brakeData;

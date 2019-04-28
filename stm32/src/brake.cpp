@@ -2,19 +2,13 @@
 
 BrakeData brakeData;
 int brakePin = PC4;
-int auxBrake = PA5;
+int auxBrake = PB9;
 
 void brake_init() {
     brakeData.brakeOn = false;
     brakeData.auxBrakeOn = false;
     pinMode(brakePin, INPUT_PULLUP);
-    pinMode(auxBrake, INPUT_PULLUP);
-
-    if(digitalRead(auxBrake)){
-         brakeData.offroad = false;
-    }else{
-       brakeData.offroad = true;
-    }
+    pinMode(auxBrake, INPUT_PULLDOWN);
 }
 
 
@@ -26,8 +20,9 @@ void brake_update() {
     }
 
     if(digitalRead(auxBrake)){
-         brakeData.auxBrakeOn = false;
+        brakeData.auxBrakeOn = true;
+         
     }else{
-       brakeData.auxBrakeOn = true;
+       brakeData.auxBrakeOn = false;
     }
 }

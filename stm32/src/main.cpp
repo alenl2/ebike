@@ -5,14 +5,15 @@
 #include "pas.h"
 #include "drive.h"
 #include "drive.h"
-
+#include "relay.h"
 
 HardwareSerial  Pc(USART2); // uart 1
+bool runInCruise = false;
+float throttleValue = 0;
+bool offroad = false;
+
 
 void debugLcd(){
-  if(displayVariables.newData == false){
-    return;
-  }
   displayVariables.newData=false;
   Pc.print("P1:");
   Pc.print(displayVariables.ui8_p1);
@@ -135,6 +136,13 @@ void debugDrive(){
   Pc.print(driveData.pwmValue);
 }
 
+void debugMain(){
+  Pc.print("Offroad:");
+  Pc.print(offroad, DEC);
+  Pc.print(" Cruise:");
+  Pc.print(runInCruise, DEC);
+}
+
 void setup() {
   HAL_Init();
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -175,14 +183,12 @@ void setup() {
     throttle_init();
     pas_init();
     drive_init();
+    relay_init();
 
     displayData.error = None;
     displayData.batteryVoltage = 49;
-    displayData.speed = 2000;
+    displayData.speed = 1000;
 }
-
-bool runInCruise = false;
-float throttleValue = 0;
 
 void loop() {
   key_update();
@@ -192,17 +198,29 @@ void loop() {
   throttle_update();
   pas_update();
   brake_update();
+  relay_update();
 
-  debugKey();
-  debugThrottle();
-  debugBrake() ;
+  //debugPas();
+  //debugMain();
+  //debugLcd();
+  //debugKey();
+  //debugThrottle();
+  //debugBrake() ;
   debugDrive();
   Pc.println();
 
   if(keyData.keyOn == false /*|| displayVariables.didInit == false*/){
-    //driveData.throttleProcentual = 0;
-    displayData.error = Info5;
+    driveData.throttleProcentual = 0;
+    displayData.cruise = false;
+    displayData.error = Info1;
+    if(brakeData.auxBrakeOn){
+      offroad = true;
+    }else{
+      offroad = false;
+    }
     return;
+  }else{
+    displayData.error=None;
   }
 
   if(displayVariables.enterCruise){
@@ -211,6 +229,8 @@ void loop() {
 
   if(brakeData.brakeOn){
     displayData.brake = true;
+    runInCruise = false;
+    displayData.cruise = false;
     throttleValue = 0;
   }else{
     displayData.brake = false;
@@ -225,9 +245,9 @@ void loop() {
         throttleValue = throttleData.procentual+1;
       }else{
         displayData.throttle = false;
-        if(pasData.pasOn){
+        if(pasData.pasOn && displayVariables.ui8_assist_level != 0){
           displayData.pas = true;
-          throttleValue = displayVariables.ui8_assist_level/5.0f*100;
+          throttleValue = (displayVariables.ui8_assist_level/5.0f)*100.0f;
         }else{
           displayData.pas = false;
           throttleValue = 1;
@@ -235,7 +255,19 @@ void loop() {
       }
     }
   }
-  driveData.throttleProcentual = throttleValue;
+  if(offroad){
+    driveData.throttleProcentual = throttleValue;
+  }else{
+    if(throttleValue == 1){
+      driveData.throttleProcentual = 1;
+    }else if(throttleValue == 0){
+      driveData.throttleProcentual = 0;
+    }else{
+      driveData.throttleProcentual = map(throttleValue, 0,101,1,20);
+    }
+    
+  }
+  
 
 }
 
@@ -249,6 +281,5 @@ TODO:
     Write:
         Calibrate speedo
 
-RESET DISPLAY DID INIT AFTER 1sec of no data
-
+RESET DISPLAY DID INIT AFTER 5sec of no data
 */

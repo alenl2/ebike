@@ -7,9 +7,7 @@ DriveData driveData;
 int pwmPin = PA1;
 TIM_HandleTypeDef htim2;
 
-//HardwareSerial Drive(USART6); // uart 1
-
-
+HardwareSerial Drive(USART6); // uart 1
 
 static void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim)
 {
@@ -67,37 +65,27 @@ static void MX_TIM2_Init(void)
 
 
 void drive_init() {
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_RCC_TIM2_CLK_ENABLE();
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_RCC_TIM2_CLK_ENABLE();
 
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
+    MX_TIM2_Init();
+    HAL_TIM_Base_Start(&htim2);
+    HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);
 
-  MX_TIM2_Init();
-  HAL_TIM_Base_Start(&htim2); 
-  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);
-
-
-
-
-
-    //Starts the TIM Base generation
-
-    //__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, pulse_width);
-
-    //Drive.begin(115200, SERIAL_8N1);
-    //pwmWrite(pwmPin, 0);
+    Drive.begin(115200, SERIAL_8N1);
 
     /*
     uint16_t command = 1010;
@@ -142,21 +130,17 @@ void drive_init() {
         sum+=arcData[i];
     }
     arcData[13] = 255 - (sum % 256);*/
-
-
 }
 
 void drive_update() {
-
     if(driveData.throttleProcentual > 0){
-        driveData.pwmValue = map(driveData.throttleProcentual,0,101,2100,10000);
+        if(driveData.throttleProcentual <= 1){
+            driveData.pwmValue = 2100;
+        }else{
+            driveData.pwmValue= map(driveData.throttleProcentual,1,101,2100,9500);
+        }
     }else{
         driveData.pwmValue = 2050;
     }
-
-
-    
     __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_2, driveData.pwmValue);
-    //analogWrite(pwmPin, driveData.pwmValue);    
-   // Drive.println(driveData.throttleProcentual+100.0f);
 }

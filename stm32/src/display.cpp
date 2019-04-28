@@ -44,8 +44,8 @@ void display_update() {
 		return;
 	}
 	rdyToTransmit = false;
-	float wheelRadius = 2074;//mm
-	ui16_wheel_period_ms = displayData.speed*0.277778f / wheelRadius;
+
+	ui16_wheel_period_ms = displayData.speed;
 
 	if (displayData.batteryBarCount == 4) {
 		ui8_battery_soc = 16; // 4 bars | full
@@ -158,7 +158,7 @@ void display_parse(){
 
 		displayVariables.calcCrc = ui8_crc;
 		displayVariables.reportedCrc = displayVariables.displaySerialBuffer [5];
-
+/*
 		
 		// see if CRC is ok
 		if (((ui8_crc ^ 10) == displayVariables.displaySerialBuffer [5]) || // some versions of CRC LCD5 (??)
@@ -172,7 +172,7 @@ void display_parse(){
 				((ui8_crc ^ 8) == displayVariables.displaySerialBuffer [5]) ||
 				((ui8_crc ^ 9) == displayVariables.displaySerialBuffer [5])) // CRC LCD3
 		{
-			
+			*/
 			
 
 			if(displayVariables.displaySerialBuffer [1] & 7 == 6){
@@ -217,7 +217,7 @@ void display_parse(){
 
 			rdyToTransmit = true;
 			lastOkRx = millis();
-		}
+		//}
 
 
 
