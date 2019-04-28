@@ -209,7 +209,7 @@ void loop() {
   debugDrive();
   Pc.println();
 
-  if(keyData.keyOn == false /*|| displayVariables.didInit == false*/){
+  if(keyData.keyOn == false){
     driveData.throttleProcentual = 0;
     displayData.cruise = false;
     displayData.error = Info1;
@@ -263,7 +263,7 @@ void loop() {
     }else if(throttleValue == 0){
       driveData.throttleProcentual = 0;
     }else{
-      driveData.throttleProcentual = map(throttleValue, 0,101,1,20);
+      driveData.throttleProcentual = map(throttleValue, 0,101,1,40);
     }
     
   }
@@ -281,5 +281,6 @@ TODO:
     Write:
         Calibrate speedo
 
+go to lock when display not inited
 RESET DISPLAY DID INIT AFTER 5sec of no data
 */
