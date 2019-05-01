@@ -131,16 +131,21 @@ void drive_init() {
     }
     arcData[13] = 255 - (sum % 256);*/
 }
+int brakeValue = 2100;
 
 void drive_update() {
     if(driveData.throttleProcentual > 0){
+        brakeValue = 2100;
         if(driveData.throttleProcentual <= 1){
             driveData.pwmValue = 2100;
         }else{
             driveData.pwmValue= map(driveData.throttleProcentual,1,101,2100,9500);
         }
     }else{
-        driveData.pwmValue = 2050;
+      if(brakeValue > 2050){
+        brakeValue--;
+      }
+        driveData.pwmValue = brakeValue;
     }
     __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_2, driveData.pwmValue);
 }
