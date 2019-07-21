@@ -134,6 +134,9 @@ void debugPas(){
 void debugDrive(){
   Pc.print("PWM:");
   Pc.print(driveData.pwmValue);
+  Pc.print(" ");
+  Pc.print("Procent:");
+  Pc.print(driveData.throttleProcentual);
 }
 
 void debugMain(){
@@ -209,6 +212,7 @@ void loop() {
   debugDrive();
   Pc.println();
 
+  keyData.keyOn = true; //TEMP HACK
   if(keyData.keyOn == false){
     driveData.throttleProcentual = 0;
     displayData.cruise = false;
@@ -255,6 +259,7 @@ void loop() {
       }
     }
   }
+  offroad = true; //temp hack
   if(offroad){
     driveData.throttleProcentual = throttleValue;
   }else{
@@ -265,7 +270,6 @@ void loop() {
     }else{
       driveData.throttleProcentual = map(throttleValue, 0,101,1,40);
     }
-    
   }
   
 
