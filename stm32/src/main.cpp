@@ -11,6 +11,7 @@ HardwareSerial  Pc(USART2); // uart 1
 bool runInCruise = false;
 float throttleValue = 0;
 bool offroad = false;
+float cruiseValue = 0;
 
 
 void debugLcd(){
@@ -240,12 +241,19 @@ void loop() {
     displayData.brake = false;
     throttleValue = 0;
     if(runInCruise){
+      if(cruiseValue == 0){
+        cruiseValue = throttleData.procentual+1;
+      }
       displayData.cruise = true;
-      throttleValue = throttleValue;
+      displayData.throttle = false;
+      displayData.pas = false;
+      throttleValue = cruiseValue;
     }else{
+      cruiseValue = 0;
       displayData.cruise = false;
       if(throttleData.throttleOn){
         displayData.throttle = true; 
+        displayData.pas = false;
         throttleValue = throttleData.procentual+1;
       }else{
         displayData.throttle = false;
@@ -271,8 +279,6 @@ void loop() {
       driveData.throttleProcentual = map(throttleValue, 0,101,1,40);
     }
   }
-  
-
 }
 
 
@@ -285,6 +291,7 @@ TODO:
     Write:
         Calibrate speedo
 
+arc200 telemetry
 go to lock when display not inited
 RESET DISPLAY DID INIT AFTER 5sec of no data
 */
