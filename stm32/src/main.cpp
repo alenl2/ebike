@@ -281,6 +281,7 @@ TODO:
     Write:
         Calibrate speedo
 
+arc200 telemetry
 go to lock when display not inited
 RESET DISPLAY DID INIT AFTER 5sec of no data
 */
